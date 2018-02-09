@@ -62,7 +62,6 @@ if (file_exists($wp_file)) {
 
         if ($meta->wp_meta_key == '_thumbnail_id') {
             $featuredId = $meta->wp_meta_value;
-            // print '<br>&bull; Meta key: ' . $featuredId;
             $featuredIdS = explode(',', $featuredId[0]);
 
             foreach ($imgxml->channel->item as $imgitem) {
@@ -84,7 +83,6 @@ if (file_exists($wp_file)) {
 
         if ($category[domain] == 'category') {
 
-            // $cat = str_replace( "-", "", $category[nicename]);
             $cat = $category[nicename];
             $markdown .= "  - " . $cat . "\n";
             print '<br>&bull; Category: ' . $cat;
