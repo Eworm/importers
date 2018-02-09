@@ -1,10 +1,6 @@
 <?php
 
 function clean_url($url) {
-    // $parts = parse_url($url);
-    // return $parts['scheme'] . '://' . $parts['host'] . $parts['path'];
-    // return substr($url, 0, strrpos( $url, '/'));
-    // return preg_replace('/^.*>\s*/', '', $url);
     return '/assets/' . basename($url);
 }
 
@@ -61,6 +57,42 @@ if (file_exists($wp_file)) {
     $markdown  = "---\n";
     $markdown .= "title: '" . $title . "'\n";
 
+    // Add intro_image bases on the thumbnail id
+    foreach ($item->wp_postmeta as $meta) {
+
+        if ($meta->wp_meta_key == '_thumbnail_id') {
+            $featuredId = $meta->wp_meta_value;
+            // print '<br>&bull; Meta key: ' . $featuredId;
+            $featuredIdS = explode(',', $featuredId[0]);
+
+            foreach ($imgxml->channel->item as $imgitem) {
+
+                if ($imgitem->wp_post_id == $featuredIdS[0]) {
+
+                    $url = clean_url($imgitem->guid);
+                    print '<br>&bull; Featured image: ' . $url;
+                    $markdown .= "intro_image: " . $url . " \n";
+
+                }
+            }
+        }
+    }
+
+    // Add tags
+    $markdown .= "tags:\n";
+    foreach ($item->category as $category) {
+
+        if ($category[domain] == 'category') {
+
+            // $cat = str_replace( "-", "", $category[nicename]);
+            $cat = $category[nicename];
+            $markdown .= "  - " . $cat . "\n";
+            print '<br>&bull; Category: ' . $cat;
+
+        }
+
+    }
+
     // Add YAML bard info
     $markdown .= "long_form:\n";
     foreach ($textArray as $paragraph) {
@@ -68,7 +100,7 @@ if (file_exists($wp_file)) {
         if (stristr($paragraph, 'img') !== FALSE) {
 
             // We are an image
-            $links = array();
+
             // Remove p tags
             $paragraph  = str_replace(['<p>', '</p>'], '', $paragraph);
             // Get src
@@ -109,9 +141,41 @@ if (file_exists($wp_file)) {
                 }
             }
 
+        } elseif (stristr($paragraph, 'vimeo') !== FALSE) {
+
+            // We are Vimeo
+            print '<br>&bull; Vimeo: ';
+            $paragraph  = str_replace(['[embed]', '[/embed]', '<p>', '</p>'], '', $paragraph);
+            $paragraph  = preg_replace('/^.*\/\s*/', '', $paragraph);
+            print $paragraph;
+
+            // Write YAML
+            $markdown .= "  -\n";
+            $markdown .= "    type: vimeo\n";
+            $markdown .= "    url: " . $paragraph . "\n";
+
+        } elseif (stristr($paragraph, 'iframe') !== FALSE) {
+
+            // We are a YouTube iframe
+            print '<br>&bull; Youtube: ';
+            // Remove p tags
+            $paragraph  = str_replace(['<p>', '</p>'], '', $paragraph);
+            // Get src
+            preg_match('[src="(.*?)"]', $paragraph, $link);
+            // Remove parts of the string
+            $paragraph  = str_replace(['src=', '"'], '', $link[0]);
+            print $paragraph;
+
+            // Write YAML
+            $markdown .= "  -\n";
+            $markdown .= "    type: youtube\n";
+            $markdown .= "    url: '" . $paragraph . "</p>'\n";
+
         } else {
 
             // We are text
+
+            // Write YAML
             $markdown .= "  -\n";
             $markdown .= "    type: text\n";
             $markdown .= "    text: '" . $paragraph . "</p>'\n";
